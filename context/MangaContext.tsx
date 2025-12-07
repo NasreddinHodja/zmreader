@@ -15,17 +15,15 @@ export interface MangaChapter {
 
 export type ViewMode = "idle" | "reader";
 
-export interface MangaContextType {
+interface MangaContextType {
   chapters: MangaChapter[];
   setChapters: (value: MangaChapter[]) => void;
 
   selectedChapter: MangaChapter | null;
   setSelectedChapter: (value: MangaChapter | null) => void;
-  selectChapter: (value: MangaChapter | null) => void;
 
   selectedPage: MangaPage | null;
   setSelectedPage: (value: MangaPage | null) => void;
-  selectPage: (value: MangaPage | null) => void;
 
   zoom: number;
   setZoom: (value: number) => void;
@@ -38,11 +36,12 @@ export interface MangaContextType {
   closeSidebar: () => void;
 
   openReader: () => void;
+
+  scrollMode: boolean;
+  setScrollMode: (value: boolean) => void;
 }
 
-export const MangaContext = createContext<MangaContextType | undefined>(
-  undefined
-);
+const MangaContext = createContext<MangaContextType | undefined>(undefined);
 
 export function MangaProvider({ children }: { children: ReactNode }) {
   const [chapters, setChapters] = useState<MangaChapter[]>([]);
@@ -58,43 +57,29 @@ export function MangaProvider({ children }: { children: ReactNode }) {
   const openSidebar = () => setIsSidebarOpen(true);
   const closeSidebar = () => setIsSidebarOpen(false);
 
+  const [scrollMode, setScrollMode] = useState(true);
+
   const openReader = () => setViewMode("reader");
-
-  // -------- added wrappers ----------
-  const selectChapter = (ch: MangaChapter | null) => {
-    setSelectedChapter(ch);
-  };
-
-  const selectPage = (p: MangaPage | null) => {
-    setSelectedPage(p);
-  };
-  // ----------------------------------
 
   return (
     <MangaContext.Provider
       value={{
         chapters,
         setChapters,
-
         selectedChapter,
         setSelectedChapter,
-        selectChapter,
-
         selectedPage,
         setSelectedPage,
-        selectPage,
-
         zoom,
         setZoom,
-
         viewMode,
         setViewMode,
-
         isSidebarOpen,
         openSidebar,
         closeSidebar,
-
         openReader,
+        scrollMode,
+        setScrollMode,
       }}
     >
       {children}

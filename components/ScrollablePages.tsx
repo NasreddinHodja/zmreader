@@ -23,6 +23,39 @@ export default function ScrollablePages() {
     if (ref) ref.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [selectedPage, selectedChapter, openReader]);
 
+  useEffect(() => {
+    if (!selectedChapter) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = pageRefs.current.findIndex((el) => el === entry.target);
+            if (idx !== -1) {
+              const page = selectedChapter.pages[idx];
+              if (page.id !== selectedPage?.id) setSelectedPage(page);
+            }
+          }
+        });
+      },
+      {
+        root: null, // viewport
+        rootMargin: "0px",
+        threshold: 0.5, // 50% of the image visible triggers it
+      }
+    );
+
+    pageRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      pageRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, [selectedChapter, selectedPage, setSelectedPage]);
+
   if (!selectedChapter) return null;
 
   return (
