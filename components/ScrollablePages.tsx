@@ -26,10 +26,8 @@ export default function ScrollablePages() {
   if (!selectedChapter) return null;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto p-4 gap-6">
+    <div className="flex flex-col h-full overflow-y-auto p-4 gap-2">
       {selectedChapter.pages.map((page, i) => {
-        const isSelected = selectedPage?.id === page.id;
-
         return (
           <div
             key={page.id}
