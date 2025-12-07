@@ -84,6 +84,7 @@ export default function CollapsibleSidebar() {
 
   return (
     <>
+      {/* OVERLAY */}
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div
@@ -98,99 +99,103 @@ export default function CollapsibleSidebar() {
         )}
       </AnimatePresence>
 
+      {/* SIDEBAR */}
       <aside
         className={`
-    fixed top-0 left-0 h-full bg-black border-r-2 shadow-xl z-50
-    flex flex-col transition-all duration-300 ease-in-out
-    ${isSidebarOpen ? "w-72" : "w-14"}
-  `}
+          fixed top-0 left-0 h-full bg-black border-r-2 shadow-xl z-50
+          flex flex-col transition-all duration-300 ease-in-out
+          ${isSidebarOpen ? "w-72" : "w-14"}
+        `}
       >
+        {/* TOGGLE BUTTON */}
         <button
           onClick={isSidebarOpen ? closeSidebar : openSidebar}
           className="fixed top-2 left-1 z-50 p-2 text-white"
         >
           {isSidebarOpen ? <X /> : <Menu />}
         </button>
+
         {/* MAIN CONTENT */}
         {isSidebarOpen && (
-          <div className="p-6 pt-16 space-y-4 text-white overflow-y-auto flex-1">
-            <h2 className="text-xl font-bold ml-2">ZMREADER</h2>
+          <div className="flex flex-col h-full pt-16 overflow-hidden text-white">
+            {/* FILE PICKER */}
+            <div className="p-6 space-y-4 shrink-0">
+              <h2 className="text-xl font-bold ml-2">ZMREADER</h2>
+              <FilePickerButton onSelect={handleDirectory}>
+                Choose Manga Folder
+              </FilePickerButton>
+            </div>
 
-            <FilePickerButton onSelect={handleDirectory}>
-              Choose Manga Folder
-            </FilePickerButton>
+            {/* CHAPTER LIST */}
+            <div className="flex-1 overflow-y-auto px-6 space-y-2">
+              {chapters.length > 0 ? (
+                <div className="space-y-2">
+                  <h3 className="text-sm opacity-80 ml-2">Chapters</h3>
+                  <ul className="space-y-2">
+                    {chapters.map((ch) => {
+                      const isOpen = selectedChapter?.id === ch.id;
+                      return (
+                        <li key={ch.id}>
+                          <div
+                            onClick={() => toggleChapter(ch)}
+                            className={`px-3 py-1 cursor-pointer flex justify-between items-center 
+                              ${isOpen ? "bg-white/20" : "hover:bg-white/10"}`}
+                          >
+                            <span className="truncate">{ch.title}</span>
+                            <span>{isOpen ? "▾" : "▸"}</span>
+                          </div>
 
-            {chapters.length > 0 ? (
-              <div className="space-y-2">
-                <h3 className="text-sm opacity-80 ml-2">Chapters</h3>
+                          <AnimatePresence>
+                            {isOpen && (
+                              <motion.ul
+                                className="ml-6 mt-1 space-y-1 overflow-hidden"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.18 }}
+                              >
+                                {ch.pages.map((p) => {
+                                  const name = p.id.split("/").pop() ?? p.id;
+                                  const isSelected = selectedPage?.id === p.id;
+                                  return (
+                                    <li
+                                      key={p.id}
+                                      onClick={() => handlePageClick(p)}
+                                      className={`text-sm px-2 py-1 truncate cursor-pointer 
+                                        ${
+                                          isSelected
+                                            ? "bg-white/30"
+                                            : "hover:bg-white/10"
+                                        }`}
+                                    >
+                                      {name}
+                                    </li>
+                                  );
+                                })}
+                              </motion.ul>
+                            )}
+                          </AnimatePresence>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center text-sm opacity-60 ml-2">
+                  No chapters found.
+                </div>
+              )}
+            </div>
 
-                <ul className="space-y-2">
-                  {chapters.map((ch) => {
-                    const isOpen = selectedChapter?.id === ch.id;
-
-                    return (
-                      <li key={ch.id}>
-                        <div
-                          onClick={() => toggleChapter(ch)}
-                          className={`px-3 py-1 cursor-pointer flex justify-between items-center 
-                          ${isOpen ? "bg-white/20" : "hover:bg-white/10"}`}
-                        >
-                          <span className="truncate">{ch.title}</span>
-                          <span>{isOpen ? "▾" : "▸"}</span>
-                        </div>
-
-                        <AnimatePresence>
-                          {isOpen && (
-                            <motion.ul
-                              className="ml-6 mt-1 space-y-1 overflow-hidden"
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.18 }}
-                            >
-                              {ch.pages.map((p) => {
-                                const name = p.id.split("/").pop() ?? p.id;
-                                const isSelected = selectedPage?.id === p.id;
-
-                                return (
-                                  <li
-                                    key={p.id}
-                                    onClick={() => handlePageClick(p)}
-                                    className={`text-sm px-2 py-1 truncate cursor-pointer 
-                                    ${
-                                      isSelected
-                                        ? "bg-white/30"
-                                        : "hover:bg-white/10"
-                                    }`}
-                                  >
-                                    {name}
-                                  </li>
-                                );
-                              })}
-                            </motion.ul>
-                          )}
-                        </AnimatePresence>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ) : (
-              <div className="text-sm opacity-60 mt-2 ml-2">
-                No chapters found.
-              </div>
-            )}
-            {/* FOOTER ZOOM CONTROLS */}
-            <div className="p-4 border-t border-white/20 text-white flex items-center justify-between">
+            {/* FOOTER: ZOOM CONTROLS */}
+            <div className="p-4 border-t border-white/20 text-white flex items-center justify-between shrink-0">
               <button
                 onClick={() => setZoom(Math.max(0.2, zoom - 0.1))}
                 className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded"
               >
                 -
               </button>
-
               <span className="text-sm opacity-80">{zoom.toFixed(2)}x</span>
-
               <button
                 onClick={() => setZoom(zoom + 0.1)}
                 className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded"
