@@ -22,7 +22,7 @@ const RootLayout = ({
   return (
     <html lang="en">
       <body
-        className={`${sourceCodePro.className} antialiased font-mono bg-black text-white`}
+        className={`${sourceCodePro.className} antialiased font-mono bg-black text-white flex flex-row`}
       >
         <MangaProvider>
           <CollapsibleSidebar />
