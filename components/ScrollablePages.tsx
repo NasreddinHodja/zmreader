@@ -4,19 +4,29 @@ import { useManga } from "@/context/MangaContext";
 import Image from "next/image";
 
 export default function ScrollablePages() {
-  const { selectedChapter, selectedPage, zoom, setSelectedPage, openReader } =
-    useManga();
+  const {
+    selectedChapter,
+    selectedPage,
+    zoom,
+    selectPage,
+    openReader,
+    shouldScroll,
+  } = useManga();
+
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isScrollingToPage = useRef(false);
-  const scrollTimeout = useRef<NodeJS.Timeout>(null);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!selectedPage || !selectedChapter) return;
+    if (!shouldScroll) return;
+
     openReader();
 
     const index = selectedChapter.pages.findIndex(
       (p) => p.id === selectedPage.id
     );
+
     const ref = pageRefs.current[index];
 
     if (ref) {
@@ -28,10 +38,11 @@ export default function ScrollablePages() {
         isScrollingToPage.current = false;
       }, 1000);
     }
-  }, [selectedPage, selectedChapter, openReader]);
+  }, [selectedPage, selectedChapter, shouldScroll, openReader]);
 
   useEffect(() => {
     if (!selectedChapter) return;
+
     const pagesSnapshot = [...pageRefs.current];
 
     const observer = new IntersectionObserver(
@@ -41,7 +52,7 @@ export default function ScrollablePages() {
         let mostVisible = { idx: -1, ratio: 0 };
 
         entries.forEach((entry) => {
-          const idx = pagesSnapshot.findIndex((el) => el === entry.target);
+          const idx = pagesSnapshot.indexOf(entry.target as HTMLDivElement);
           if (idx !== -1 && entry.intersectionRatio > mostVisible.ratio) {
             mostVisible = { idx, ratio: entry.intersectionRatio };
           }
@@ -50,7 +61,7 @@ export default function ScrollablePages() {
         if (mostVisible.idx !== -1 && mostVisible.ratio > 0.8) {
           const page = selectedChapter.pages[mostVisible.idx];
           if (page.id !== selectedPage?.id) {
-            setSelectedPage(page);
+            selectPage(page, false);
           }
         }
       },
@@ -71,40 +82,37 @@ export default function ScrollablePages() {
       });
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
-  }, [selectedChapter, selectedPage, setSelectedPage]);
+  }, [selectedChapter, selectedPage, selectPage]);
 
   if (!selectedChapter) return null;
 
   return (
     <div className="flex flex-col h-full overflow-y-auto py-4 gap-2">
-      {selectedChapter.pages.map((page, i) => {
-        return (
-          <div
-            key={page.id}
-            ref={(el) => {
-              pageRefs.current[i] = el;
-            }}
-            className="w-full flex justify-center"
-          >
-            <div className="relative">
-              <Image
-                src={page.url}
-                alt=""
-                width={0}
-                height={0}
-                sizes="100vw"
-                className="mx-auto"
-                style={{
-                  width: "auto",
-                  height: "auto",
-                  maxWidth: `${zoom * 100}%`,
-                }}
-                onClick={() => setSelectedPage(page)}
-              />
-            </div>
+      {selectedChapter.pages.map((page, i) => (
+        <div
+          key={page.id}
+          ref={(el) => {
+            pageRefs.current[i] = el;
+          }}
+          className="w-full flex justify-center bg-blue-500"
+        >
+          <div className="relative w-full bg-red-500">
+            <Image
+              src={page.url}
+              alt=""
+              width={0}
+              height={0}
+              sizes="100vw"
+              className="mx-auto"
+              style={{
+                width: `${zoom * 100}%`,
+                height: "auto",
+              }}
+              onClick={() => selectPage(page, false)}
+            />
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }

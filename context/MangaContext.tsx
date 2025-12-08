@@ -14,7 +14,7 @@ export interface MangaChapter {
   id: string;
   title: string;
   pages: MangaPage[];
-  files?: FileWithPath[]; // store files for lazy-loading
+  files?: FileWithPath[];
 }
 
 interface MangaContextProps {
@@ -23,7 +23,8 @@ interface MangaContextProps {
   selectedChapter: MangaChapter | null;
   setSelectedChapter: (chapter: MangaChapter | null) => void;
   selectedPage: MangaPage | null;
-  setSelectedPage: (page: MangaPage | null) => void;
+  selectPage: (page: MangaPage | null, scroll?: boolean) => void;
+  shouldScroll: boolean;
   openReader: () => void;
   isSidebarOpen: boolean;
   openSidebar: () => void;
@@ -48,6 +49,7 @@ export function MangaProvider({ children }: { children: ReactNode }) {
     null
   );
   const [selectedPage, setSelectedPage] = useState<MangaPage | null>(null);
+  const [shouldScroll, setShouldScroll] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [zoom, setZoomState] = useState(1);
   const [scrollMode, setScrollMode] = useState(true);
@@ -60,6 +62,11 @@ export function MangaProvider({ children }: { children: ReactNode }) {
     setZoomState(Math.max(0.5, Math.min(1, newZoom)));
   };
 
+  const selectPage = (page: MangaPage | null, scroll = false) => {
+    setSelectedPage(page);
+    setShouldScroll(scroll);
+  };
+
   return (
     <MangaContext.Provider
       value={{
@@ -68,7 +75,8 @@ export function MangaProvider({ children }: { children: ReactNode }) {
         selectedChapter,
         setSelectedChapter,
         selectedPage,
-        setSelectedPage,
+        selectPage,
+        shouldScroll,
         openReader,
         isSidebarOpen,
         openSidebar,

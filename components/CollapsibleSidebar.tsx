@@ -24,7 +24,7 @@ export default function CollapsibleSidebar() {
     selectedChapter,
     setSelectedChapter,
     selectedPage,
-    setSelectedPage,
+    selectPage,
     openReader,
     isSidebarOpen,
     openSidebar,
@@ -135,11 +135,11 @@ export default function CollapsibleSidebar() {
         }));
 
       setSelectedChapter({ ...firstChapter, pages });
-      setSelectedPage(pages[0]);
+      selectPage(pages[0], false);
       openReader();
     } else {
       setSelectedChapter(null);
-      setSelectedPage(null);
+      selectPage(null);
     }
 
     openSidebar();
@@ -148,7 +148,7 @@ export default function CollapsibleSidebar() {
   function toggleChapter(chapter: MangaChapter) {
     if (selectedChapter?.id === chapter.id) {
       setSelectedChapter(null);
-      setSelectedPage(null);
+      selectPage(null);
     } else {
       const files = chapter.files ?? [];
       const pages: MangaPage[] = files
@@ -163,13 +163,13 @@ export default function CollapsibleSidebar() {
         }));
 
       setSelectedChapter({ ...chapter, pages });
-      setSelectedPage(pages[0]);
+      selectPage(pages[0]);
       openReader();
     }
   }
 
   function handlePageClick(page: MangaPage) {
-    setSelectedPage(page);
+    selectPage(page, true);
     openReader();
     if (isMobile) closeSidebar();
   }
