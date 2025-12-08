@@ -86,7 +86,7 @@ export default function ScrollablePages() {
             }}
             className="w-full flex justify-center"
           >
-            <div className="relative" style={{ width: `${zoom * 100}%` }}>
+            <div className="relative">
               <Image
                 src={page.url}
                 alt=""
@@ -94,8 +94,9 @@ export default function ScrollablePages() {
                 height={0}
                 sizes="100vw"
                 style={{
-                  width: "100%",
+                  width: "auto",
                   height: "auto",
+                  maxWidth: `${zoom * 100}%`,
                   maxHeight: "100vh",
                 }}
                 onClick={() => setSelectedPage(page)}
