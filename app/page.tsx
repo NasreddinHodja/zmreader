@@ -18,7 +18,7 @@ export default function Home() {
 
   let message: string;
 
-  if (chapters.length === 0) message = "Upload manga";
+  if (chapters.length === 0) message = "Upload chapter";
   else if (!selectedChapter) message = "Select chapter";
   else message = "Select page";
 

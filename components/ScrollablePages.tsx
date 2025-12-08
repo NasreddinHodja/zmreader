@@ -10,7 +10,6 @@ export default function ScrollablePages() {
   const isScrollingToPage = useRef(false);
   const scrollTimeout = useRef<NodeJS.Timeout>(null);
 
-  // Handle programmatic scroll to selected page
   useEffect(() => {
     if (!selectedPage || !selectedChapter) return;
     openReader();
@@ -24,7 +23,6 @@ export default function ScrollablePages() {
       isScrollingToPage.current = true;
       ref.scrollIntoView({ behavior: "smooth", block: "center" });
 
-      // Clear flag after scroll completes
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
       scrollTimeout.current = setTimeout(() => {
         isScrollingToPage.current = false;
@@ -32,32 +30,34 @@ export default function ScrollablePages() {
     }
   }, [selectedPage, selectedChapter, openReader]);
 
-  // Observe which page is in view (only update if not programmatically scrolling)
   useEffect(() => {
     if (!selectedChapter) return;
     const pagesSnapshot = [...pageRefs.current];
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Don't update selected page if we're programmatically scrolling
         if (isScrollingToPage.current) return;
 
+        let mostVisible = { idx: -1, ratio: 0 };
+
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = pagesSnapshot.findIndex((el) => el === entry.target);
-            if (idx !== -1) {
-              const page = selectedChapter.pages[idx];
-              if (page.id !== selectedPage?.id) {
-                setSelectedPage(page);
-              }
-            }
+          const idx = pagesSnapshot.findIndex((el) => el === entry.target);
+          if (idx !== -1 && entry.intersectionRatio > mostVisible.ratio) {
+            mostVisible = { idx, ratio: entry.intersectionRatio };
           }
         });
+
+        if (mostVisible.idx !== -1 && mostVisible.ratio > 0.8) {
+          const page = selectedChapter.pages[mostVisible.idx];
+          if (page.id !== selectedPage?.id) {
+            setSelectedPage(page);
+          }
+        }
       },
       {
         root: null,
         rootMargin: "0px",
-        threshold: 0.5,
+        threshold: [0, 0.25, 0.5, 0.75, 0.8, 1],
       }
     );
 
@@ -93,11 +93,11 @@ export default function ScrollablePages() {
                 width={0}
                 height={0}
                 sizes="100vw"
+                className="mx-auto"
                 style={{
                   width: "auto",
                   height: "auto",
                   maxWidth: `${zoom * 100}%`,
-                  maxHeight: "100vh",
                 }}
                 onClick={() => setSelectedPage(page)}
               />
