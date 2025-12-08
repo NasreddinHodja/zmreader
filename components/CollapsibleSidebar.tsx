@@ -133,7 +133,7 @@ export default function CollapsibleSidebar() {
       >
         <button
           onClick={isSidebarOpen ? closeSidebar : openSidebar}
-          className="absolute top-2 right-2 z-10 p-2 text-white hover:bg-white/10 rounded"
+          className="absolute top-2 right-2 z-10 p-2 text-white hover:bg-white/10"
         >
           {isSidebarOpen ? <X /> : <Menu />}
         </button>
@@ -208,14 +208,14 @@ export default function CollapsibleSidebar() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded"
+                    className="px-2 py-1 hover:bg-white/20"
                   >
                     -
                   </button>
                   <span className="text-sm opacity-80">{zoom.toFixed(2)}x</span>
                   <button
                     onClick={() => setZoom(zoom + 0.1)}
-                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded"
+                    className="px-2 py-1 hover:bg-white/20"
                   >
                     +
                   </button>
@@ -223,7 +223,7 @@ export default function CollapsibleSidebar() {
 
                 <button
                   onClick={() => setScrollMode(!scrollMode)}
-                  className="px-2 py-1 w-36 bg-white/10 hover:bg-white/20 rounded text-sm"
+                  className="px-2 py-1 w-36 hover:bg-white/20 text-sm"
                 >
                   {scrollMode ? "Scroll Mode" : "Page Turn"}
                 </button>
