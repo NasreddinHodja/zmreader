@@ -218,7 +218,7 @@ export default function CollapsibleSidebar() {
         {!isMobile && (
           <button
             onClick={isSidebarOpen ? closeSidebar : openSidebar}
-            className="absolute top-2 right-2 z-10 p-2 text-white hover:bg-white/10 rounded"
+            className="absolute top-2 right-2 z-10 p-2 text-white hover:bg-white/10"
           >
             {isSidebarOpen ? <X /> : <Menu />}
           </button>
@@ -228,7 +228,7 @@ export default function CollapsibleSidebar() {
         {isMobile && isSidebarOpen && (
           <button
             onClick={closeSidebar}
-            className="absolute top-4 right-4 z-10 p-2 text-white hover:bg-white/10 rounded"
+            className="absolute top-4 right-4 z-10 p-2 text-white hover:bg-white/10"
           >
             <X size={24} />
           </button>
@@ -260,8 +260,8 @@ export default function CollapsibleSidebar() {
                         <li key={ch.id}>
                           <div
                             onClick={() => toggleChapter(ch)}
-                            className={`px-3 py-2 cursor-pointer flex justify-between items-center rounded
-                              ${isOpen ? "bg-white/20" : "hover:bg-white/10"}`}
+                            className={`px-3 py-2 cursor-pointer flex justify-between items-center
+                              ${isOpen ? "border-2" : "hover:bg-white/10"}`}
                           >
                             <span className="truncate">{ch.title}</span>
                             <span>{isOpen ? "▾" : "▸"}</span>
@@ -282,14 +282,14 @@ export default function CollapsibleSidebar() {
                                     <li
                                       key={p.id}
                                       onClick={() => handlePageClick(p)}
-                                      className={`text-sm px-2 py-2 truncate cursor-pointer rounded
+                                      className={`text-sm px-2 py-2 truncate cursor-pointer
                                         ${
                                           isSelected
-                                            ? "bg-white/30"
+                                            ? "underline"
                                             : "hover:bg-white/10"
                                         }`}
                                     >
-                                      {name}
+                                      Page {Number(name.substring(0, 3))}
                                     </li>
                                   );
                                 })}
@@ -312,7 +312,7 @@ export default function CollapsibleSidebar() {
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                      className="px-3 py-2 hover:bg-white/20 rounded"
+                      className="px-3 py-2 hover:bg-white/20"
                     >
                       -
                     </button>
@@ -321,7 +321,7 @@ export default function CollapsibleSidebar() {
                     </span>
                     <button
                       onClick={() => setZoom(zoom + 0.1)}
-                      className="px-3 py-2 hover:bg-white/20 rounded"
+                      className="px-3 py-2 hover:bg-white/20"
                     >
                       +
                     </button>
@@ -329,7 +329,7 @@ export default function CollapsibleSidebar() {
 
                   <button
                     onClick={() => setScrollMode(!scrollMode)}
-                    className="px-3 py-2 hover:bg-white/20 text-sm border rounded w-full"
+                    className="px-3 py-2 hover:bg-white/20 text-sm border-2 w-full"
                   >
                     {scrollMode ? "Scroll Mode" : "Page Turn"}
                   </button>
