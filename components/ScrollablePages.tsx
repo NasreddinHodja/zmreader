@@ -41,48 +41,47 @@ export default function ScrollablePages() {
   }, [selectedPage, selectedChapter, shouldScroll, openReader]);
 
   useEffect(() => {
-    if (!selectedChapter) return;
+    if (!selectedChapter || !selectedPage) return;
 
-    const pagesSnapshot = [...pageRefs.current];
+    const index = selectedChapter.pages.findIndex(
+      (p) => p.id === selectedPage.id
+    );
+    const currentRef = pageRefs.current[index];
+    if (!currentRef) return;
+
+    let lastY = 0;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (isScrollingToPage.current) return;
 
-        let mostVisible = { idx: -1, ratio: 0 };
+        const entry = entries[0];
+        const isVisible = entry.intersectionRatio > 0;
 
-        entries.forEach((entry) => {
-          const idx = pagesSnapshot.indexOf(entry.target as HTMLDivElement);
-          if (idx !== -1 && entry.intersectionRatio > mostVisible.ratio) {
-            mostVisible = { idx, ratio: entry.intersectionRatio };
-          }
-        });
+        if (!isVisible) {
+          const currentTop = entry.boundingClientRect.top;
 
-        if (mostVisible.idx !== -1 && mostVisible.ratio > 0.8) {
-          const page = selectedChapter.pages[mostVisible.idx];
-          if (page.id !== selectedPage?.id) {
-            selectPage(page, false);
+          const direction = currentTop < lastY ? "down" : "up";
+          lastY = currentTop;
+
+          const newIndex = direction === "down" ? index + 1 : index - 1;
+
+          if (newIndex >= 0 && newIndex < selectedChapter.pages.length) {
+            const nextPage = selectedChapter.pages[newIndex];
+            selectPage(nextPage, false);
           }
         }
       },
       {
         root: null,
-        rootMargin: "0px",
-        threshold: [0, 0.25, 0.5, 0.75, 0.8, 1],
+        threshold: [0, 0.01], // detect only when page is fully off-screen
       }
     );
 
-    pagesSnapshot.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
+    observer.observe(currentRef);
 
-    return () => {
-      pagesSnapshot.forEach((ref) => {
-        if (ref) observer.unobserve(ref);
-      });
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    };
-  }, [selectedChapter, selectedPage, selectPage]);
+    return () => observer.disconnect();
+  }, [selectedPage, selectedChapter, selectPage]);
 
   if (!selectedChapter) return null;
 
