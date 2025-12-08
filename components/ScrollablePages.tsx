@@ -94,9 +94,9 @@ export default function ScrollablePages() {
           ref={(el) => {
             pageRefs.current[i] = el;
           }}
-          className="w-full flex justify-center bg-blue-500"
+          className="w-full flex justify-center"
         >
-          <div className="relative w-full bg-red-500">
+          <div className="relative w-full">
             <Image
               src={page.url}
               alt=""
