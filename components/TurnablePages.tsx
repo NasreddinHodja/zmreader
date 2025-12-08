@@ -5,7 +5,7 @@ import { useManga } from "@/context/MangaContext";
 import Image from "next/image";
 
 export default function TurnablePages() {
-  const { selectedChapter, selectedPage, setSelectedPage } = useManga();
+  const { selectedChapter, selectedPage, selectPage } = useManga();
 
   const pages = useMemo(() => selectedChapter?.pages ?? [], [selectedChapter]);
   const currentIndex = selectedPage
@@ -15,9 +15,9 @@ export default function TurnablePages() {
   const goToPage = useCallback(
     (index: number) => {
       if (index < 0 || index >= pages.length) return;
-      setSelectedPage(pages[index]);
+      selectPage(pages[index]);
     },
-    [pages, setSelectedPage]
+    [pages, selectPage]
   );
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
