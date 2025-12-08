@@ -1,5 +1,4 @@
 "use client";
-
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface MangaPage {
@@ -50,12 +49,16 @@ export function MangaProvider({ children }: { children: ReactNode }) {
   );
   const [selectedPage, setSelectedPage] = useState<MangaPage | null>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoomState] = useState(1);
   const [scrollMode, setScrollMode] = useState(true);
 
   const openReader = () => {};
   const openSidebar = () => setSidebarOpen(true);
   const closeSidebar = () => setSidebarOpen(false);
+
+  const setZoom = (newZoom: number) => {
+    setZoomState(Math.max(0.5, Math.min(1, newZoom)));
+  };
 
   return (
     <MangaContext.Provider
