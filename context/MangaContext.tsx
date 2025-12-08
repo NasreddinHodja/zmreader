@@ -63,7 +63,6 @@ export function MangaProvider({ children }: { children: ReactNode }) {
   };
 
   const selectPage = (page: MangaPage | null, scroll = false) => {
-    console.debug(page);
     setSelectedPage(page);
     setShouldScroll(scroll);
   };

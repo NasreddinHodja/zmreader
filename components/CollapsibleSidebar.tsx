@@ -15,7 +15,7 @@ import {
   MangaPage,
   FileWithPath,
 } from "@/context/MangaContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function CollapsibleSidebar() {
   const {
@@ -38,6 +38,30 @@ export default function CollapsibleSidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const x = useMotionValue(0);
   const opacity = useTransform(x, [0, 288], [0.5, 0]);
+
+  const pageListRef = useRef<HTMLUListElement | null>(null);
+
+  useEffect(() => {
+    if (!isSidebarOpen || !selectedChapter || !selectedPage) return;
+
+    // Wait for animation to finish (sidebar slide + list expand)
+    const t = setTimeout(() => {
+      const container = pageListRef.current;
+      if (!container) return;
+
+      const item = container.querySelector(
+        `[data-page-id="${selectedPage.id}"]`
+      );
+      if (!item) return;
+
+      (item as HTMLElement).scrollIntoView({
+        behavior: "instant",
+        block: "center",
+      });
+    }, 200);
+
+    return () => clearTimeout(t);
+  }, [isSidebarOpen, selectedChapter, selectedPage]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -270,6 +294,7 @@ export default function CollapsibleSidebar() {
                           <AnimatePresence>
                             {isOpen && (
                               <motion.ul
+                                ref={pageListRef}
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
@@ -280,6 +305,7 @@ export default function CollapsibleSidebar() {
                                   const isSelected = selectedPage?.id === p.id;
                                   return (
                                     <li
+                                      data-page-id={p.id}
                                       key={p.id}
                                       onClick={() => handlePageClick(p)}
                                       className={`text-sm px-2 py-2 truncate cursor-pointer
