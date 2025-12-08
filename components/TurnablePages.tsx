@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useManga } from "@/context/MangaContext";
 import Image from "next/image";
 
@@ -8,7 +8,6 @@ export default function TurnablePages() {
   const { selectedChapter, selectedPage, setSelectedPage } = useManga();
 
   const pages = useMemo(() => selectedChapter?.pages ?? [], [selectedChapter]);
-
   const currentIndex = selectedPage
     ? pages.findIndex((p) => p.id === selectedPage.id)
     : 0;
@@ -21,7 +20,12 @@ export default function TurnablePages() {
     [pages, setSelectedPage]
   );
 
-  // handle arrow keys
+  const handleClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const x = e.clientX;
+    if (x < window.innerWidth / 2) goToPage(currentIndex - 1);
+    else goToPage(currentIndex + 1);
+  };
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") goToPage(currentIndex + 1);
@@ -35,16 +39,9 @@ export default function TurnablePages() {
 
   const page = pages[currentIndex];
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const { clientX } = e;
-    const half = window.innerWidth / 2;
-    if (clientX < half) goToPage(currentIndex - 1);
-    else goToPage(currentIndex + 1);
-  };
-
   return (
     <div
-      className="h-screen w-screen bg-black flex flex-col items-center justify-center relative cursor-pointer"
+      className="h-screen w-screen bg-black flex flex-col items-center justify-center relative"
       onClick={handleClick}
     >
       <div className="flex-1 flex items-center justify-center w-full">

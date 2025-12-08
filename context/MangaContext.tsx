@@ -1,47 +1,47 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface MangaPage {
   id: string;
   url: string;
 }
 
+export interface FileWithPath extends File {
+  webkitRelativePath: string;
+}
+
 export interface MangaChapter {
   id: string;
   title: string;
   pages: MangaPage[];
+  files?: FileWithPath[]; // store files for lazy-loading
 }
 
-export type ViewMode = "idle" | "reader";
-
-interface MangaContextType {
+interface MangaContextProps {
   chapters: MangaChapter[];
-  setChapters: (value: MangaChapter[]) => void;
-
+  setChapters: (chapters: MangaChapter[]) => void;
   selectedChapter: MangaChapter | null;
-  setSelectedChapter: (value: MangaChapter | null) => void;
-
+  setSelectedChapter: (chapter: MangaChapter | null) => void;
   selectedPage: MangaPage | null;
-  setSelectedPage: (value: MangaPage | null) => void;
-
-  zoom: number;
-  setZoom: (value: number) => void;
-
-  viewMode: ViewMode;
-  setViewMode: (v: ViewMode) => void;
-
+  setSelectedPage: (page: MangaPage | null) => void;
+  openReader: () => void;
   isSidebarOpen: boolean;
   openSidebar: () => void;
   closeSidebar: () => void;
-
-  openReader: () => void;
-
+  zoom: number;
+  setZoom: (zoom: number) => void;
   scrollMode: boolean;
-  setScrollMode: (value: boolean) => void;
+  setScrollMode: (scrollMode: boolean) => void;
 }
 
-const MangaContext = createContext<MangaContextType | undefined>(undefined);
+const MangaContext = createContext<MangaContextProps | undefined>(undefined);
+
+export const useManga = () => {
+  const ctx = useContext(MangaContext);
+  if (!ctx) throw new Error("useManga must be used within MangaProvider");
+  return ctx;
+};
 
 export function MangaProvider({ children }: { children: ReactNode }) {
   const [chapters, setChapters] = useState<MangaChapter[]>([]);
@@ -49,17 +49,13 @@ export function MangaProvider({ children }: { children: ReactNode }) {
     null
   );
   const [selectedPage, setSelectedPage] = useState<MangaPage | null>(null);
-
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
-  const [viewMode, setViewMode] = useState<ViewMode>("idle");
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const openSidebar = () => setIsSidebarOpen(true);
-  const closeSidebar = () => setIsSidebarOpen(false);
-
   const [scrollMode, setScrollMode] = useState(true);
 
-  const openReader = () => setViewMode("reader");
+  const openReader = () => {};
+  const openSidebar = () => setSidebarOpen(true);
+  const closeSidebar = () => setSidebarOpen(false);
 
   return (
     <MangaContext.Provider
@@ -70,14 +66,12 @@ export function MangaProvider({ children }: { children: ReactNode }) {
         setSelectedChapter,
         selectedPage,
         setSelectedPage,
-        zoom,
-        setZoom,
-        viewMode,
-        setViewMode,
+        openReader,
         isSidebarOpen,
         openSidebar,
         closeSidebar,
-        openReader,
+        zoom,
+        setZoom,
         scrollMode,
         setScrollMode,
       }}
@@ -85,10 +79,4 @@ export function MangaProvider({ children }: { children: ReactNode }) {
       {children}
     </MangaContext.Provider>
   );
-}
-
-export function useManga() {
-  const ctx = useContext(MangaContext);
-  if (!ctx) throw new Error("useManga must be used inside <MangaProvider>");
-  return ctx;
 }

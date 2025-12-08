@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import ScrollablePages from "@/components/ScrollablePages";
 import TurnablePages from "@/components/TurnablePages";
 import { useManga } from "@/context/MangaContext";

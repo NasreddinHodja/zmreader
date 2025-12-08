@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { FilePickerButton } from "./FilePickerButton";
-import { useManga, MangaChapter, MangaPage } from "@/context/MangaContext";
-
-interface FileWithPath extends File {
-  webkitRelativePath: string;
-}
+import {
+  useManga,
+  MangaChapter,
+  MangaPage,
+  FileWithPath,
+} from "@/context/MangaContext";
 
 export default function CollapsibleSidebar() {
   const {
@@ -48,18 +48,8 @@ export default function CollapsibleSidebar() {
       .map(([folder, files]) => ({
         id: folder,
         title: folder,
-        pages: files
-          .sort((a, b) =>
-            a.webkitRelativePath.localeCompare(
-              b.webkitRelativePath,
-              undefined,
-              { numeric: true }
-            )
-          )
-          .map<MangaPage>((file) => ({
-            id: file.webkitRelativePath,
-            url: URL.createObjectURL(file),
-          })),
+        pages: [],
+        files,
       }));
 
     setChapters(chaptersArr);
@@ -69,8 +59,26 @@ export default function CollapsibleSidebar() {
   }
 
   function toggleChapter(chapter: MangaChapter) {
-    if (selectedChapter?.id === chapter.id) setSelectedChapter(null);
-    else setSelectedChapter(chapter);
+    if (selectedChapter?.id === chapter.id) {
+      setSelectedChapter(null);
+      setSelectedPage(null);
+    } else {
+      const files = chapter.files ?? [];
+      const pages: MangaPage[] = files
+        .sort((a, b) =>
+          a.webkitRelativePath.localeCompare(b.webkitRelativePath, undefined, {
+            numeric: true,
+          })
+        )
+        .map((file) => ({
+          id: file.webkitRelativePath,
+          url: URL.createObjectURL(file),
+        }));
+
+      setSelectedChapter({ ...chapter, pages });
+      setSelectedPage(pages[0]);
+      openReader();
+    }
   }
 
   function handlePageClick(page: MangaPage) {
@@ -79,14 +87,8 @@ export default function CollapsibleSidebar() {
     closeSidebar();
   }
 
-  const currentIndex =
-    selectedChapter && selectedPage
-      ? selectedChapter.pages.findIndex((p) => p.id === selectedPage.id)
-      : 0;
-
   return (
     <>
-      {/* OVERLAY */}
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div
@@ -101,147 +103,113 @@ export default function CollapsibleSidebar() {
         )}
       </AnimatePresence>
 
-      {/* SIDEBAR */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full bg-black border-r-2 shadow-xl z-50
-          flex flex-col transition-all duration-300 ease-in-out
-          ${isSidebarOpen ? "w-72" : "w-14"}
-        `}
+      <motion.aside
+        initial={false}
+        animate={{ x: isSidebarOpen ? 0 : "-15rem" }}
+        transition={{ type: "tween", duration: 0.3 }}
+        className="fixed top-0 left-0 h-full w-72 bg-black border-r-2 shadow-xl z-50 flex flex-col"
       >
-        {/* TOGGLE BUTTON */}
         <button
           onClick={isSidebarOpen ? closeSidebar : openSidebar}
-          className="fixed top-2 left-1 z-50 p-2 text-white"
+          className="absolute top-2 right-1.5 z-10 p-2 text-white"
         >
           {isSidebarOpen ? <X /> : <Menu />}
         </button>
 
-        {isSidebarOpen && (
-          <div className="flex flex-col h-full pt-16 overflow-hidden text-white">
-            {/* FILE PICKER */}
-            <div className="p-6 space-y-4 shrink-0">
-              <h2 className="text-xl font-bold ml-2">ZMREADER</h2>
-              <FilePickerButton onSelect={handleDirectory}>
-                Choose Manga Folder
-              </FilePickerButton>
-            </div>
-
-            {/* CHAPTER LIST */}
-            <div className="flex-1 overflow-y-auto px-6 space-y-2">
-              {chapters.length > 0 ? (
-                <ul className="space-y-2">
-                  {chapters.map((ch) => {
-                    const isOpen = selectedChapter?.id === ch.id;
-                    return (
-                      <li key={ch.id}>
-                        <div
-                          onClick={() => toggleChapter(ch)}
-                          className={`px-3 py-1 cursor-pointer flex justify-between items-center 
-                            ${isOpen ? "bg-white/20" : "hover:bg-white/10"}`}
-                        >
-                          <span className="truncate">{ch.title}</span>
-                          <span>{isOpen ? "▾" : "▸"}</span>
-                        </div>
-
-                        {isOpen && (
-                          <ul className="ml-6 mt-1 space-y-1 overflow-hidden">
-                            {ch.pages.map((p) => {
-                              const name = p.id.split("/").pop() ?? p.id;
-                              const isSelected = selectedPage?.id === p.id;
-                              return (
-                                <li
-                                  key={p.id}
-                                  onClick={() => handlePageClick(p)}
-                                  className={`text-sm px-2 py-1 truncate cursor-pointer 
-                                    ${
-                                      isSelected
-                                        ? "bg-white/30"
-                                        : "hover:bg-white/10"
-                                    }`}
-                                >
-                                  {name}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <div className="flex-1 flex items-center text-sm opacity-60 ml-2">
-                  No chapters found.
-                </div>
-              )}
-            </div>
-
-            {/* FOOTER: PAGE TURN + ZOOM + MODE */}
-            <div className="p-4 border-t border-white/20 text-white flex flex-col items-center gap-2 shrink-0">
-              {/* PAGE TURN CONTROLS */}
-              {selectedChapter && selectedPage && (
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => {
-                      const idx = currentIndex;
-                      if (idx > 0)
-                        setSelectedPage(selectedChapter.pages[idx - 1]);
-                    }}
-                    className="px-2.5 py-1 hover:bg-white/20"
-                    disabled={currentIndex === 0}
-                  >
-                    ◀
-                  </button>
-
-                  <span className="w-24 text-sm opacity-80">
-                    {currentIndex + 1} / {selectedChapter.pages.length}
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      const idx = currentIndex;
-                      if (idx < selectedChapter.pages.length - 1)
-                        setSelectedPage(selectedChapter.pages[idx + 1]);
-                    }}
-                    className="px-2.5 py-1 hover:bg-white/20"
-                    disabled={currentIndex === selectedChapter.pages.length - 1}
-                  >
-                    ▶
-                  </button>
-                </div>
-              )}
-
-              {/* ZOOM CONTROLS */}
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                  className="px-3 py-1 hover:bg-white/20"
-                >
-                  -
-                </button>
-                <span className="w-24 text-sm opacity-80">
-                  {zoom.toFixed(2)}x
-                </span>
-                <button
-                  onClick={() => setZoom(zoom + 0.1)}
-                  className="px-3 py-1 hover:bg-white/20"
-                >
-                  +
-                </button>
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col h-full pt-4 overflow-hidden text-white"
+            >
+              <div className="p-6 space-y-4 shrink-0">
+                <h2 className="text-xl font-bold ml-2">ZMREADER</h2>
+                <FilePickerButton onSelect={handleDirectory}>
+                  Choose Manga Folder
+                </FilePickerButton>
               </div>
 
-              {/* MODE TOGGLE */}
-              <button
-                onClick={() => setScrollMode(!scrollMode)}
-                className="px-2 py-1 w-36 hover:bg-white/20 border-2 text-sm"
-              >
-                {scrollMode ? "Scroll Mode" : "Page Turn"}
-              </button>
-            </div>
-          </div>
-        )}
-      </aside>
+              <div className="flex-1 overflow-y-auto px-6 space-y-2">
+                {chapters.length > 0 ? (
+                  <ul className="space-y-2">
+                    {chapters.map((ch) => {
+                      const isOpen = selectedChapter?.id === ch.id;
+                      return (
+                        <li key={ch.id}>
+                          <div
+                            onClick={() => toggleChapter(ch)}
+                            className={`px-3 py-1 cursor-pointer flex justify-between items-center 
+                              ${isOpen ? "bg-white/20" : ""}`}
+                          >
+                            <span className="truncate">{ch.title}</span>
+                            <span>{isOpen ? "▾" : "▸"}</span>
+                          </div>
+
+                          {isOpen && (
+                            <ul className="ml-6 mt-1 space-y-1 overflow-hidden">
+                              {selectedChapter?.pages.map((p) => {
+                                const name = p.id.split("/").pop() ?? p.id;
+                                const isSelected = selectedPage?.id === p.id;
+                                return (
+                                  <li
+                                    key={p.id}
+                                    onClick={() => handlePageClick(p)}
+                                    className={`text-sm px-2 py-1 truncate cursor-pointer 
+                                      ${
+                                        isSelected
+                                          ? "bg-white/30"
+                                          : "hover:bg-white/10"
+                                      }`}
+                                  >
+                                    {name}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="flex-1 flex items-center text-sm opacity-60 ml-2">
+                    No chapters found.
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 border-t border-white/20 text-white flex items-center justify-center shrink-0 space-x-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+                    className="px-2 py-1"
+                  >
+                    -
+                  </button>
+                  <span className="text-sm opacity-80">{zoom.toFixed(2)}x</span>
+                  <button
+                    onClick={() => setZoom(zoom + 0.1)}
+                    className="px-2 py-1"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setScrollMode(!scrollMode)}
+                  className="px-2 py-1 w-36 bg-white/10 hover:bg-white/20 text-sm"
+                >
+                  {scrollMode ? "Scroll Mode" : "Page Turn"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.aside>
     </>
   );
 }
