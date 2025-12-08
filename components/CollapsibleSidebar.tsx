@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  PanInfo,
+} from "motion/react";
 import { Menu, X } from "lucide-react";
 import { FilePickerButton } from "./FilePickerButton";
 import {
@@ -9,6 +15,7 @@ import {
   MangaPage,
   FileWithPath,
 } from "@/context/MangaContext";
+import { useEffect, useState } from "react";
 
 export default function CollapsibleSidebar() {
   const {
@@ -27,6 +34,65 @@ export default function CollapsibleSidebar() {
     scrollMode,
     setScrollMode,
   } = useManga();
+
+  const [isMobile, setIsMobile] = useState(false);
+  const x = useMotionValue(0);
+  const opacity = useTransform(x, [0, 288], [0.5, 0]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let startX = 0;
+    let startY = 0;
+    let hasOpened = false;
+    const edgeThreshold = 50; // Increased for easier triggering
+
+    const handleTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      hasOpened = false;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isSidebarOpen || hasOpened) return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const deltaX = currentX - startX;
+      const deltaY = Math.abs(currentY - startY);
+
+      // Check if swipe started from left edge and moved right
+      if (startX < edgeThreshold && deltaX > 30 && deltaY < 50) {
+        hasOpened = true;
+        openSidebar();
+      }
+    };
+
+    const handleTouchEnd = () => {
+      hasOpened = false;
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
+    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isMobile, isSidebarOpen, openSidebar]);
 
   function handleDirectory(fileList: FileList) {
     const files = Array.from(fileList) as FileWithPath[];
@@ -54,7 +120,6 @@ export default function CollapsibleSidebar() {
 
     setChapters(chaptersArr);
 
-    // Auto-select first chapter
     if (chaptersArr.length > 0) {
       const firstChapter = chaptersArr[0];
       const files = firstChapter.files ?? [];
@@ -106,7 +171,17 @@ export default function CollapsibleSidebar() {
   function handlePageClick(page: MangaPage) {
     setSelectedPage(page);
     openReader();
-    closeSidebar();
+    if (isMobile) closeSidebar();
+  }
+
+  function handleDragEnd(
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) {
+    const shouldClose = info.offset.x < -100 || info.velocity.x < -500;
+    if (shouldClose) {
+      closeSidebar();
+    }
   }
 
   return (
@@ -117,26 +192,47 @@ export default function CollapsibleSidebar() {
             key="overlay"
             className="fixed inset-0 bg-black/80 z-40"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
+            animate={{ opacity: isMobile ? opacity.get() : 0.5 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={closeSidebar}
+            style={isMobile ? { opacity } : undefined}
           />
         )}
       </AnimatePresence>
 
       <motion.aside
+        drag={isMobile && isSidebarOpen ? "x" : false}
+        dragConstraints={{ left: -288, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={handleDragEnd}
+        style={isMobile ? { x } : undefined}
         initial={false}
-        animate={{ x: isSidebarOpen ? 0 : "-15rem" }}
+        animate={{
+          x: isSidebarOpen ? 0 : isMobile ? -288 : -240,
+        }}
         transition={{ type: "tween", duration: 0.3 }}
         className="fixed top-0 left-0 h-full w-72 bg-black border-r-2 shadow-xl z-50 flex flex-col"
       >
-        <button
-          onClick={isSidebarOpen ? closeSidebar : openSidebar}
-          className="absolute top-2 right-2 z-10 p-2 text-white hover:bg-white/10"
-        >
-          {isSidebarOpen ? <X /> : <Menu />}
-        </button>
+        {/* Desktop toggle button */}
+        {!isMobile && (
+          <button
+            onClick={isSidebarOpen ? closeSidebar : openSidebar}
+            className="absolute top-2 right-2 z-10 p-2 text-white hover:bg-white/10 rounded"
+          >
+            {isSidebarOpen ? <X /> : <Menu />}
+          </button>
+        )}
+
+        {/* Mobile close button */}
+        {isMobile && isSidebarOpen && (
+          <button
+            onClick={closeSidebar}
+            className="absolute top-4 right-4 z-10 p-2 text-white hover:bg-white/10 rounded"
+          >
+            <X size={24} />
+          </button>
+        )}
 
         <AnimatePresence>
           {isSidebarOpen && (
@@ -164,35 +260,42 @@ export default function CollapsibleSidebar() {
                         <li key={ch.id}>
                           <div
                             onClick={() => toggleChapter(ch)}
-                            className={`px-3 py-1 cursor-pointer flex justify-between items-center 
+                            className={`px-3 py-2 cursor-pointer flex justify-between items-center rounded
                               ${isOpen ? "bg-white/20" : "hover:bg-white/10"}`}
                           >
                             <span className="truncate">{ch.title}</span>
                             <span>{isOpen ? "▾" : "▸"}</span>
                           </div>
 
-                          {isOpen && (
-                            <ul className="ml-6 mt-1 space-y-1 overflow-hidden">
-                              {selectedChapter?.pages.map((p) => {
-                                const name = p.id.split("/").pop() ?? p.id;
-                                const isSelected = selectedPage?.id === p.id;
-                                return (
-                                  <li
-                                    key={p.id}
-                                    onClick={() => handlePageClick(p)}
-                                    className={`text-sm px-2 py-1 truncate cursor-pointer 
-                                      ${
-                                        isSelected
-                                          ? "bg-white/30"
-                                          : "hover:bg-white/10"
-                                      }`}
-                                  >
-                                    {name}
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
+                          <AnimatePresence>
+                            {isOpen && (
+                              <motion.ul
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="ml-6 mt-1 space-y-1 overflow-hidden"
+                              >
+                                {selectedChapter?.pages.map((p) => {
+                                  const name = p.id.split("/").pop() ?? p.id;
+                                  const isSelected = selectedPage?.id === p.id;
+                                  return (
+                                    <li
+                                      key={p.id}
+                                      onClick={() => handlePageClick(p)}
+                                      className={`text-sm px-2 py-2 truncate cursor-pointer rounded
+                                        ${
+                                          isSelected
+                                            ? "bg-white/30"
+                                            : "hover:bg-white/10"
+                                        }`}
+                                    >
+                                      {name}
+                                    </li>
+                                  );
+                                })}
+                              </motion.ul>
+                            )}
+                          </AnimatePresence>
                         </li>
                       );
                     })}
@@ -204,29 +307,33 @@ export default function CollapsibleSidebar() {
                 )}
               </div>
 
-              <div className="p-4 border-t border-white/20 text-white flex items-center justify-center shrink-0 space-x-4">
-                <div className="flex items-center gap-2">
+              <div className="p-4 border-t border-white/20 text-white shrink-0">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+                      className="px-3 py-2 hover:bg-white/20 rounded"
+                    >
+                      -
+                    </button>
+                    <span className="text-sm opacity-80 w-16 text-center">
+                      {zoom.toFixed(2)}x
+                    </span>
+                    <button
+                      onClick={() => setZoom(zoom + 0.1)}
+                      className="px-3 py-2 hover:bg-white/20 rounded"
+                    >
+                      +
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-                    className="px-2 py-1 hover:bg-white/20"
+                    onClick={() => setScrollMode(!scrollMode)}
+                    className="px-3 py-2 hover:bg-white/20 text-sm border rounded w-full"
                   >
-                    -
-                  </button>
-                  <span className="text-sm opacity-80">{zoom.toFixed(2)}x</span>
-                  <button
-                    onClick={() => setZoom(zoom + 0.1)}
-                    className="px-2 py-1 hover:bg-white/20"
-                  >
-                    +
+                    {scrollMode ? "Scroll Mode" : "Page Turn"}
                   </button>
                 </div>
-
-                <button
-                  onClick={() => setScrollMode(!scrollMode)}
-                  className="px-2 py-1 w-36 hover:bg-white/20 text-sm"
-                >
-                  {scrollMode ? "Scroll Mode" : "Page Turn"}
-                </button>
               </div>
             </motion.div>
           )}
